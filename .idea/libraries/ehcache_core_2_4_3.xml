@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="ehcache-core-2.4.3">
+    <CLASSES>
+      <root url="jar://E:/jar/shiro/ehcache-core-2.4.3.jar!/" />
+      <root url="jar://E:/jar/shiro/log4j-1.2.15.jar!/" />
+      <root url="jar://E:/jar/shiro/slf4j-log4j12-1.6.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

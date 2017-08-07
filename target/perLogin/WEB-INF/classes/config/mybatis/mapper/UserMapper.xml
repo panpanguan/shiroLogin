@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iie.authshiro.mapper.UserMapper">
+  <resultMap id="BaseResultMap" type="com.iie.authshiro.pojo.User">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <id column="username" jdbcType="VARCHAR" property="username" />
+    <result column="nick_name" jdbcType="VARCHAR" property="nickName" />
+    <result column="pwd" jdbcType="VARCHAR" property="pwd" />
+    <result column="register_time" jdbcType="DATE" property="registerTime" />
+    <result column="salt" jdbcType="VARCHAR" property="salt" />
+    <result column="role" jdbcType="VARCHAR" property="role" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    id, username, nick_name, pwd, register_time, salt, role
+  </sql>
+  <!--通过登录账号获取用户信息-->
+  <select id="selectByUserName" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from user
+    where username = #{username,jdbcType=VARCHAR}
+  </select>
+
+  <insert id="insert" parameterType="com.iie.authshiro.pojo.User">
+    insert into user (id, username, nick_name,
+      pwd, register_time, salt,
+      role)
+    values (#{id,jdbcType=BIGINT}, #{username,jdbcType=VARCHAR}, #{nickName,jdbcType=VARCHAR},
+      #{pwd,jdbcType=VARCHAR}, #{registerTime,jdbcType=DATE}, #{salt,jdbcType=VARCHAR},
+      #{role,jdbcType=VARCHAR})
+  </insert>
+
+</mapper>

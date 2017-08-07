@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.iie.authshiro.mapper.RoleAuthorityMapper" >
+  <resultMap id="BaseResultMap" type="com.iie.authshiro.pojo.RoleAuthority">
+    <id column="id" jdbcType="BIGINT" property="id" javaType="java.lang.Long" />
+    <result column="url" jdbcType="VARCHAR" property="url" javaType="java.lang.String" />
+    <result column="role_key" jdbcType="VARCHAR" property="roleKey" javaType="java.lang.String" />
+    <result column="create_time" jdbcType="DATE" property="createTime" javaType="java.util.Date" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    id, url, roleKey, create_time
+  </sql>
+
+  <insert id="insert" parameterType="com.iie.authshiro.pojo.RoleAuthority">
+    insert into role_authority (id, url, role_key,
+    create_time)
+    values (#{id,jdbcType=BIGINT}, #{url,jdbcType=VARCHAR}, #{roleKey,jdbcType=VARCHAR},
+    #{createTime,jdbcType=DATE})
+  </insert>
+
+  <!--获取权限角色表信息-->
+  <select id="selectRoleAndAuthority" resultMap="BaseResultMap">
+    SELECT
+    url, role_key
+    FROM
+    role_authority
+  </select>
+</mapper>

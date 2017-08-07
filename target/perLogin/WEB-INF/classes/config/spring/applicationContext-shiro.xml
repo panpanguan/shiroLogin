@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!--1. 配置 SecurityManager!-->
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <!--缓存管理器-->
+        <property name="cacheManager" ref="cacheManager"/>
+        <!--shiro的认证器-->
+        <property name="authenticator" ref="authenticator"/>
+        <!--会话管理器-->
+        <property name="sessionManager" ref="sessionManager"/>
+        <property name="realms">
+            <!--可配置多个realm，加载不同安全类型的数据源-->
+            <list>
+                <ref bean="shiroRealm"/>
+            </list>
+        </property>
+    </bean>
+    <!--
+    2. 配置 CacheManager.
+    2.1 需要加入 ehcache 的 jar 包及配置文件.
+    -->
+    <bean id="cacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
+        <property name="cacheManagerConfigFile" value="classpath:config/ehcache.xml"/>
+    </bean>
+    <bean id="authenticator"
+          class="org.apache.shiro.authc.pam.ModularRealmAuthenticator">
+        <property name="authenticationStrategy">
+            <bean class="org.apache.shiro.authc.pam.AtLeastOneSuccessfulStrategy"/>
+        </property>
+    </bean>
+    <!--
+    	3. 配置 Realm，实现了 org.apache.shiro.realm.Realm 接口的 bean
+    -->
+    <bean id="shiroRealm" class="com.iie.authshiro.config.ShiroRealm">
+        <property name="credentialsMatcher" ref="credentialsMatcher"/>
+    </bean>
+
+    <!--
+    4. 配置 LifecycleBeanPostProcessor. 可以自定的来调用配置在 Spring IOC 容器中 shiro bean 的生命周期方法.
+    -->
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+
+    <!--
+    5. 启用 IOC 容器中使用 shiro 的注解. 但必须在配置了 LifecycleBeanPostProcessor 之后才可以使用.
+    -->
+    <bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"
+          depends-on="lifecycleBeanPostProcessor"/>
+    <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+        <property name="securityManager" ref="securityManager"/>
+    </bean>
+    <!--
+    6. 配置 ShiroFilter.
+    6.1 id 必须和 web.xml 文件中配置的 DelegatingFilterProxy 的 <filter-name> 一致.
+    若不一致, 则会抛出: NoSuchBeanDefinitionException. 因为 Shiro 会来 IOC 容器中查找和 <filter-name> 名字对应的 filter bean.
+    -->
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <property name="securityManager" ref="securityManager"/>
+        <property name="loginUrl" value="/index.jsp"/>
+        <property name="unauthorizedUrl" value="/404.jsp"/>
+        <property name="filters">
+            <map>
+                <!--并发登录人数控制过滤器-->
+                <entry key="kickout" value-ref="kickoutSessionControlFilter"/>
+            </map>
+        </property>
+        <!--初始化一些匿名资源-->
+       <!-- 资源配置越靠前，优先级越高
+        1）anon表示匿名 2）logout表示退出 3）authc 表示必须认证(即登录)后才可能访问的页面 4）kickout为自定义的过滤器-->
+        <property name="filterChainDefinitions">
+            <value>
+                /index.jsp = anon
+                /register.jsp = anon
+                /shiro/register = anon
+                /shiro/addRegister = anon
+                /shiro/loginCheck = kickout,anon
+            </value>
+        </property>
+        <!--从数据库加载，资源角色配置-->
+        <property name="filterChainDefinitionMap" ref="filterChainDefinitionMap"/>
+    </bean>
+
+    <!-- 7. 配置一个 bean, 该 bean 实际上是一个 Map. 通过实例工厂方法的方式 -->
+    <bean id="filterChainDefinitionMap"
+          factory-bean="filterChainDefinitionMapBuilder" factory-method="buildFilterChainDefinitionMap"/>
+
+    <bean id="filterChainDefinitionMapBuilder"
+          class="com.iie.authshiro.config.FilterChainDefinitionMapBuilder"/>
+
+    <!--8.暴力破解-->
+    <bean id="credentialsMatcher"
+          class="com.iie.authshiro.config.LimitCredentialsMatcher">
+        <constructor-arg ref="cacheManager" />
+        <property name="hashAlgorithmName" value="md5" />
+        <property name="hashIterations" value="1024" />
+        <property name="storedCredentialsHexEncoded" value="true" />
+    </bean>
+    <!--9.超时退出-->
+    <!-- 会话管理器 -->
+    <bean id="sessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+        <property name="globalSessionTimeout" value="3600000"/>
+        <property name="deleteInvalidSessions" value="true"/>
+        <property name="sessionIdCookieEnabled" value="true"/>
+
+    </bean>
+    <!--10.并发登录人数控制-->
+    <bean id="kickoutSessionControlFilter"
+          class="com.iie.authshiro.config.KickOutSessionFilter">
+        <property name="cacheManager" ref="cacheManager"/>
+        <property name="sessionManager" ref="sessionManager"/>
+        <property name="kickoutAfter" value="false"/>
+        <!--并发登录人数-->
+        <property name="maxSession" value="2"/>
+        <!--踢出后跳转页面-->
+        <property name="kickoutUrl" value="/index.jsp?kickout=1"/>
+    </bean>
+</beans>
